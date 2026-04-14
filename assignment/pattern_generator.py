@@ -37,58 +37,65 @@ COMMENT HABITS (practice these throughout the course):
     - Keep comments up to date -- if you change the code, update the comment.
 """
 
+#Imports Maya Python command library and clears the scene
 import maya.cmds as cmds
 
-# Clear the scene.
 cmds.file(new=True, force=True)
 
-
 def generate_pattern():
-    """Generate a procedural pattern of objects using nested loops.
 
-    This function should:
-        1. Define variables for rows, columns, and spacing.
-        2. Use a nested for-loop to iterate over rows and columns.
-        3. Inside the loop, use a conditional to vary object properties.
-        4. Create and position each object.
-    """
-    # --- Configuration variables ---
-    num_rows = 5        # Number of rows in the pattern.
-    num_cols = 5        # Number of columns in the pattern.
-    spacing = 3.0       # Distance between object centers.
+    num_rows = 5
+    num_cols = 5
+    spacing = 3.0
 
-    # TODO: Create a nested loop that iterates over rows and columns.
-    #
-    # HINT -- your loop structure should look something like this:
-    #
-    #   for row in range(num_rows):
-    #       for col in range(num_cols):
-    #           # Calculate position
-    #           x_pos = col * spacing
-    #           z_pos = row * spacing
-    #
-    #           # TODO: Add a conditional here that changes something
-    #           # based on row, col, or (row + col).
-    #           # For example:
-    #           #   if (row + col) % 2 == 0:
-    #           #       create a cube
-    #           #   else:
-    #           #       create a sphere
-    #
-    #           # TODO: Create the object using cmds.polyCube(), etc.
-    #
-    #           # TODO: Position the object using cmds.move().
-    #
-    #           # TODO: (Optional) Vary the scale using cmds.scale().
+#Centering offset
+#Shifts the grid so it is centered at (0, 0, 0)
+    x_offset = (num_cols - 1) * spacing * 0.5
+    z_offset = (num_rows - 1) * spacing * 0.5
 
-    pass  # Remove this line once you add your code.
+    for row in range(num_rows):
+        for col in range(num_cols):
 
+#Apply centering offsets here also makes the name for the cubes and their colors
+            x_pos = (col * spacing) - x_offset
+            z_pos = (row * spacing) - z_offset
 
-# ---------------------------------------------------------------------------
-# Run the generator
-# ---------------------------------------------------------------------------
+            cube_name = f"cube_row{row}_col{col}"
+            obj = cmds.polyCube(name=cube_name)[0]
+#(I did use AI to help me with understanding and making a material and hook it up so it can be used on geometry)
+            shader = cmds.shadingNode("lambert", asShader=True, name=f"shader_{row}_{col}")
+            shading_group = cmds.sets(renderable=True, noSurfaceShader=True, empty=True)
+            cmds.connectAttr(shader + ".outColor", shading_group + ".surfaceShader")
+
+#Center cube's scale, position, and color
+            if row == 2 and col == 2:
+                cmds.scale(2.0, 2.0, 2.0, obj)
+                cmds.move(x_pos, 2.0, z_pos, obj)
+                cmds.setAttr(shader + ".color", 0, 1, 1.5, type="double3")
+
+#Diagonal cube's scale, position, and color
+            elif row == col:
+                cmds.scale(1.4, 1.4, 1.4, obj)
+                cmds.move(x_pos, 0.5, z_pos, obj)
+                cmds.setAttr(shader + ".color", 0, 1, 0.5, type="double3")
+
+#Checkerboard cube's scale, position, and color
+            elif (row + col) % 2 == 0:
+                cmds.scale(1.1, 1.1, 1.1, obj)
+                cmds.move(x_pos, 0.0, z_pos, obj)
+                cmds.setAttr(shader + ".color", 0.2, 0.4, 1, type="double3")
+
+#Default cube's scale, position, and color
+            else:
+                cmds.scale(0.7, 0.7, 0.7, obj)
+                cmds.move(x_pos, -0.5, z_pos, obj)
+                cmds.setAttr(shader + ".color", 0.8, 0.8, 0.8, type="double3")
+
+            cmds.sets(obj, edit=True, forceElement=shading_group)
+
+#Runs the generator and frames everything in the viewport
+#Also makes a confirmation message!
 generate_pattern()
 
-# Frame everything in the viewport.
 cmds.viewFit(allObjects=True)
-print("Pattern generated successfully!")
+print("Centered grid generated successfully!")
